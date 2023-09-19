@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.metrics import (accuracy_score, classification_report,
                              confusion_matrix)
 from sklearn.model_selection import train_test_split
@@ -14,7 +15,8 @@ from sklearn.tree import DecisionTreeClassifier
 dataset = pd.read_csv('card_transdata.csv')
 
 # Dividir o dataset em recursos (X) e rótulos (y)
-X = dataset[['distance_from_home', 'used_pin_number']]
+X = dataset[['distance_from_home', 'used_pin_number','distance_from_last_transaction']]
+#X = dataset.drop('fraud', axis=1)
 y = dataset['fraud']
 
 # Dividir o dataset em conjuntos de treinamento e teste
@@ -38,7 +40,7 @@ print(classification_report(y_test, nb_predictions))
 print("Confusion Matrix:\n", confusion_matrix(y_test, nb_predictions))
 
 # Treinar e avaliar o modelo Árvore de Decisão
-dt_classifier = DecisionTreeClassifier(max_depth=5)
+dt_classifier = DecisionTreeClassifier(random_state=42)
 dt_classifier.fit(X_train, y_train)
 dt_predictions = dt_classifier.predict(X_test)
 dt_accuracy = accuracy_score(y_test, dt_predictions)
@@ -57,42 +59,17 @@ knn_accuracy = accuracy_score(y_test, knn_predictions)
 
 print("\nK-Nearest Neighbors (KNN):")
 print("Acuracia:", knn_accuracy)
-print("Relatorio de Classificacao:")
+print("Relatorio de Classificação:")
 print("Confusion Matrix:\n", confusion_matrix(y_test, knn_predictions))
 print(classification_report(y_test, knn_predictions))
 
-#Função para plotar as fronteiras de decisão
-def plot_decision_boundary(X, y, classifier, title):
-    h = .06  # Tamanho do passo na malha
-    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-   
-    Z = classifier.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape(xx.shape)
-    
-    plt.contourf(xx, yy, Z, alpha=0.8)
-    plt.scatter(X[:, 0], X[:, 1], c=y, marker='o', edgecolors='k')
-    plt.title(title)
+def plot_confusion_matrix(y_true, y_pred, labels):
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=labels, yticklabels=labels)
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+    plt.show()
 
-#Plotando as fronteiras de decisão usando as duas primeiras features
-X_train_plot = X_train[:, :2]
-X_test_plot = X_test[:, :2]
-
-plt.figure(figsize=(15, 5))
-
-#Fronteria de decisão - Naive Bayes
-plt.subplot(131)
-plot_decision_boundary(X_train_plot, y_train, nb_classifier, 'Fronteira de Decisao - Neive Bayes')
-
-
-#Fronteira de decisão da Árvore de Decisão
-plt.subplot(132)
-plot_decision_boundary(X_train_plot, y_train, dt_classifier, 'Fronteira de Decisao - Árvore de Decisao')
-
-#Fronteira de decisão do KNN
-plt.subplot(133)
-plot_decision_boundary(X_train_plot, y_train, knn_classifier, 'Fronteira de Decisao - KNN')
-
-plt.tight_layout()
-plt.show()
+plot_confusion_matrix(y_test, nb_predictions, labels=['Não Fraude', 'Fraude'])
